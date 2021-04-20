@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Dots&display=swap" rel="stylesheet">
+
+    <style>
+      :root {
+      --bg: #123;
+      --color: #08f;
+      }
+      * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Zen Dots", cursive !important;
+      color: var(--color);
+      border: none;
+      }
+      html {
+      width: 100%;
+      height: 100vh;
+      overflow: auto;
+      }
+      body {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      }
+      .wrapper {
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg);
+      display: flex;
+      padding: 2rem;
+      }
+      button,
+      input {
+      padding: 0.5rem;
+      border: 0.25rem solid var(--color);
+      background-color: var(--bg);
+      cursor: pointer;
+      }
+      button:hover, button:focus,
+      input:hover,
+      input:focus {
+      background-color: var(--color);
+      color: var(--bg);
+      }
+      .stopwatch {
+      box-shadow: 0 0 1rem var(--color);
+      background-color: #fff2;
+      border-radius: 0.75rem;
+      width: 50vw;
+      min-width: 400px;
+      max-width: 600px;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      }
+      .stopwatch .top {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 1rem;
+      }
+      .stopwatch .top .title,
+      .stopwatch .top .timer {
+      width: 100%;
+      text-align: center;
+      padding: 0.5rem 0;
+      }
+      .stopwatch .top .title {
+      font-size: 2.25rem;
+      }
+      .stopwatch .top .timer {
+      font-size: 1.75rem;
+      }
+      .stopwatch .middle {
+      margin-bottom: 1rem;
+      }
+      .stopwatch .middle .buttons {
+      display: flex;
+      justify-content: space-evenly;
+      margin-bottom: 1rem;
+      }
+      .stopwatch .middle .buttons button {
+      flex: 1;
+      }
+      .stopwatch .middle .save {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      }
+      .stopwatch .middle .save p {
+      width: 100%;
+      padding: 0.25rem 0;
+      }
+      .stopwatch .middle .save input {
+      flex: 1;
+      }
+      .stopwatch .middle .save input::-moz-placeholder {
+      color: #aaa;
+      }
+      .stopwatch .middle .save input:-ms-input-placeholder {
+      color: #aaa;
+      }
+      .stopwatch .middle .save input::placeholder {
+      color: #aaa;
+      }
+      .stopwatch .middle .save button {
+      width: 100px;
+      }
+      .stopwatch .bottom {
+      display: flex;
+      flex-direction: column;
+      }
+      .stopwatch .bottom ul {
+      padding-top: 1rem;
+      }
+      .stopwatch .bottom ul li {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      border: 0.25rem solid var(--color);
+      }
+      .stopwatch .bottom ul li h3,
+      .stopwatch .bottom ul li p,
+      .stopwatch .bottom ul li span {
+      padding: 0.5rem 0.25rem;
+      }
+      .stopwatch .bottom ul li h3:empty,
+      .stopwatch .bottom ul li p:empty,
+      .stopwatch .bottom ul li span:empty {
+      display: none;
+      }
+      .stopwatch .bottom ul li h3 {
+      font-size: 1.5rem;
+      }
+      .stopwatch .bottom ul li p {
+      font-size: 1.25rem;
+      }
+      .stopwatch .bottom ul li span {
+      font-size: 0.75rem;
+      }
+      .stopwatch .bottom ul li button {
+      border: none;
+      border-top: 0.25rem solid var(--color);
+      }
+      .stopwatch .bottom ul li button:hover, .stopwatch .bottom ul li button:focus {
+      background-color: #933;
+      color: var(--color);
+      }
+    </style>
+    <title>Stopwatch</title>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="stopwatch">
+        <div class="top">
+          <h1 class="title">Stopwatch</h1>
+          <p class="timer">00:00:00</p>
+        </div>
+        <div class="middle">
+          <div class="buttons">
+            <button>Start</button>
+            <button>Pause</button>
+            <button>Reset</button>
+          </div>
+          <form class="save">
+            <p>Save: <span>00:00:00</span></p>
+            <input placeholder="Description" />
+            <button>Save</button>
+          </form>
+        </div>
+        <div class="bottom">
+          <h4>Saved times:</h4>
+          <ul>
+            <li>
+              <h3>
+              Loading....
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <script>
+      const itemsKey = "stopwatch:items"; // localStorage key
+      
+      let interval = setInterval(handleTick, 1000);
+      
+      const state = {
+        isRuning: false,
+        isPaused: false,
+        time: 0,
+        items: []
+      };
+      
+      const setState = (newState) => {
+        Object.assign(state, newState);
+      };
+      
+      if (!localStorage.getItem(itemsKey)) {
+        const demo = {
+          id: 1,
+          time: 10,
+          date: new Date().toLocaleString(),
+          description: "Demo time"
+        };
+        localStorage.setItem(itemsKey, JSON.stringify([demo]));
+        state.items.push(demo);
+      }
+      
+      window.onload = init;
+      
+      const display = document.querySelector(".timer");
+      const [startBtn, stopBtn, resetBtn] = document.querySelectorAll(
+        ".middle .buttons button"
+      );
+      const [saveTime, saveInput, saveBtn] = document.querySelectorAll(
+        ".middle .save > *"
+      );
+      
+      const itemsContainer = document.querySelector(".bottom ul");
+      
+      function secToTime(sec) {
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec - h * 3600) / 60);
+        const s = sec % 60;
+        return `${padLeft(h, 2, "0")}:${padLeft(m, 2, "0")}:${padLeft(s, 2, "0")}`;
+      }
+      
+      function padLeft(str, len, fill) {
+        return `${new Array(len).fill(fill).join("")}${str}`.slice(-len);
+      }
+      
+      function generateItem({ id, description, time, date }) {
+        const html = `<li id="id-${id}"><h3>${description}</h3><p>${secToTime(
+          time
+        )}</p><span>${date}</span><button>Remove</button></li>`;
+        const parsed = new DOMParser()
+          .parseFromString(html, "text/html")
+          .querySelector("li");
+        const button = parsed.querySelector("button");
+        button.addEventListener("click", removeItem.bind(null, id));
+        return parsed;
+      }
+      
+      function removeItem(id) {
+        let { items } = state;
+        items = items.filter((item) => item.id !== id);
+        localStorage.setItem(itemsKey, JSON.stringify(items));
+        setState({ items });
+      
+        fillContainer(items);
+      }
+      
+      function setTime(time) {
+        const f = secToTime(time);
+        display.innerText = f;
+        saveTime.querySelector("span").innerText = f;
+      }
+      
+      function init() {
+        setTime(0);
+        const items = JSON.parse(localStorage.getItem(itemsKey) || "[]");
+        setState({ items });
+        console.log({ items });
+      
+        fillContainer(items);
+      }
+      
+      function fillContainer(items) {
+        itemsContainer.innerHTML = "";
+        items.reverse().forEach((item) => {
+          itemsContainer.appendChild(generateItem(item));
+        });
+      }
+      
+      saveBtn.parentNode.addEventListener("submit", handleSaveClick);
+      
+      startBtn.addEventListener("click", handleStartClick);
+      stopBtn.addEventListener("click", handleStopClick);
+      resetBtn.addEventListener("click", handleResetClick);
+      
+      function handleStartClick() {
+        setState({ isRunning: true, isPaused: false });
+      }
+      function handleStopClick() {
+        setState({ isPaused: true, isRunning: false });
+      }
+      function handleResetClick() {
+        if (state.time !== 0) {
+          setState({ time: 0 });
+          setTime(0);
+        }
+        setState({ isRunning: false, isPaused: false });
+      }
+      
+      function handleTick() {
+        if (state.isRunning) {
+          setState({ time: state.time + 1 });
+          setTime(state.time);
+        }
+      }
+      
+      function handleSaveClick(e) {
+        e.preventDefault();
+        if (state.time === 0) return;
+      
+        const newSave = {
+          id: Date.now(),
+          time: state.time,
+          date: new Date().toLocaleString(),
+          description: saveInput.value
+        };
+      
+        const { items } = state;
+        items.push(newSave);
+        setState({ items });
+        localStorage.setItem(itemsKey, JSON.stringify(items));
+        saveInput.value = "";
+      
+        fillContainer(items);
+      }
+      
+      
+                
+    </script>
+  </body>
+</html>
